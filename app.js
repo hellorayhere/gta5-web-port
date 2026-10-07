@@ -38,6 +38,21 @@ const CACHE_DIR = process.env.GTA5_CACHE_DIR || path.join(os.tmpdir(), 'gta5-cac
     console.log(`[gta5] entries indexed: ${Object.keys(proxy.index.entries).length}`);
   });
 
+  // Keep the free instance warm. Render spins a free web service down after
+  // ~15 minutes with no traffic, and the wake-up request is exactly what makes a
+  // returning visitor see a blank/stuck page. A self-ping every 10 minutes stays
+  // inside that idle window, so once the service is up it stays up (one always-on
+  // service also fits the free plan's 750 instance-hours a month). RENDER_EXTERNAL_URL
+  // is injected by Render; GTA5_SELF_URL overrides it.
+  const SELF_URL = process.env.GTA5_SELF_URL || process.env.RENDER_EXTERNAL_URL || 'https://gta5free.onrender.com';
+  const keepAlive = setInterval(() => {
+    fetch(SELF_URL.replace(/\/+$/, '') + '/__status')
+      .then((r) => r.text())
+      .catch(() => {});
+  }, 10 * 60 * 1000);
+  keepAlive.unref();
+  console.log(`[gta5] keep-alive pinging ${SELF_URL} every 10 min`);
+
   const shutdown = () => {
     console.log('[gta5] shutting down');
     server.close(() => process.exit(0));

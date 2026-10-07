@@ -42,30 +42,22 @@ body {
 
 /* ------------------------------------------------------------------ backdrop */
 
-.bg-gif {
+/* full-bleed cityscape backdrop (replaces the old animated logo GIF).
+   Static image = no per-frame decode/repaint, which removes the main
+   source of scroll/scroll jank the GIF caused. */
+.bg-photo {
   position: fixed;
   inset: 0;
   z-index: -3;
-  background-image: url('/assets/gta5-logo.gif');
-  background-repeat: no-repeat;
-  background-position: center 38%;
-  background-size: cover;
-  filter: saturate(1.05) contrast(1.02);
-  transform: scale(1.08);
-  opacity: 0.55;
-}
-
-/* a real GTA V scene behind the animated logo, for depth */
-.bg-scene {
-  position: fixed;
-  inset: 0;
-  z-index: -4;
-  background-image: url('/assets/hero-bg.webp');
+  background-color: #070707;
+  background-image: url('/assets/hero-city.jpg');
   background-repeat: no-repeat;
   background-position: center;
   background-size: cover;
-  opacity: 0.28;
-  filter: grayscale(0.25) brightness(0.7);
+  filter: saturate(1.06) contrast(1.03) brightness(0.94);
+  transform: translateZ(0);      /* own compositor layer: the page scrolls over it without repainting */
+  backface-visibility: hidden;
+  opacity: 0.92;
 }
 
 .bg-overlay {
@@ -73,8 +65,8 @@ body {
   inset: 0;
   z-index: -2;
   background:
-    radial-gradient(120% 90% at 50% 30%, rgba(0,0,0,0.10) 0%, rgba(0,0,0,0.62) 58%, rgba(0,0,0,0.94) 100%),
-    linear-gradient(180deg, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.15) 30%, rgba(0,0,0,0.35) 62%, rgba(0,0,0,0.96) 100%);
+    radial-gradient(120% 95% at 50% 38%, rgba(0,0,0,0.04) 0%, rgba(0,0,0,0.46) 62%, rgba(0,0,0,0.90) 100%),
+    linear-gradient(180deg, rgba(0,0,0,0.80) 0%, rgba(0,0,0,0.10) 26%, rgba(0,0,0,0.30) 60%, rgba(0,0,0,0.95) 100%);
 }
 
 /* subtle film grain / scanline texture, keeps it from looking flat */

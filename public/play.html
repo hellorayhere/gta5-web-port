@@ -46,6 +46,25 @@
 <div id="hud"></div>
 <div id="loading"><div id="ls-stage"><div id="ls-screens"></div><img id="ls-logo" src="/b/8b0b5899ed/title/logo.png" alt=""><div id="ls-bars"><div id="modes" class="ls-bar"><button data-act="back"></button><button data-act="map5"></button><button data-act="map6"></button><button data-act="sandbox"></button><button data-act="story"></button></div><div class="ls-bar"><span id="label">Starting...</span><span id="pct">0%</span><i class="ls-spin"></i></div></div></div><div id="ls-log"><div id="data"></div><div id="console"></div></div><div id="bar"><div id="fill"></div></div></div>
 <div id="fps"></div>
+<script>
+// Runs before the engine module: remove any service worker / old cache left by
+// earlier builds (so a stale cache cannot blank the page), and ask the browser to
+// keep this origin's storage so savegames survive a reload. Also make sure a
+// startup failure shows a message instead of a blank screen.
+(function () {
+	try {
+		if ('serviceWorker' in navigator) navigator.serviceWorker.getRegistrations().then(function (rs) { rs.forEach(function (r) { r.unregister(); }); }).catch(function () {});
+		if (window.caches && caches.keys) caches.keys().then(function (ks) { ks.forEach(function (k) { if (k.indexOf('gamedata') === 0) caches.delete(k); }); }).catch(function () {});
+		if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(function () {});
+	} catch (e) {}
+	var fail = function (what) {
+		var el = document.getElementById('hud');
+		if (el && !el.textContent) { el.textContent = 'The page hit an error (' + what + '). Reload to try again.'; el.style.color = '#f96'; }
+	};
+	window.addEventListener('error', function (e) { if (document.getElementById('loading')) fail(e.message || 'script error'); });
+	window.addEventListener('unhandledrejection', function (e) { if (document.getElementById('loading')) fail((e.reason && e.reason.message) || 'promise rejection'); });
+})();
+</script>
 <script type="module">
 // Page of the browser build. The engine runs in a dedicated worker (loader.js: its "main thread", where the static constructors and
 // main() run and which may block); the page only owns the canvas, which is transferred to that worker and on to the GPU worker.

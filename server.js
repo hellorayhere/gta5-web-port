@@ -86,6 +86,28 @@ function drainOrClose(stream) {
   });
 }
 
+/**
+ * Run `fn` over `items` with at most `limit` in flight, preserving order.
+ * archive.org throttles each connection to ~0.1 MB/s but scales almost
+ * linearly with the number of open connections, so fanning reads out is by
+ * far the biggest throughput win available to this proxy.
+ */
+async function mapLimit(items, limit, fn) {
+  const results = new Array(items.length);
+  let next = 0;
+  const n = Math.max(1, Math.min(limit, items.length));
+  await Promise.all(
+    Array.from({ length: n }, async () => {
+      for (;;) {
+        const i = next++;
+        if (i >= items.length) return;
+        results[i] = await fn(items[i], i);
+      }
+    })
+  );
+  return results;
+}
+
 class GameServer {
   /**
    * @param {object} opts
@@ -107,8 +129,13 @@ class GameServer {
     this._resolvedPromise = null;
     this._dataOff = new Map();
     this._busy = new Map();
+    // Pre-built, gzipped POST /data/batch answers, keyed by the same hash the
+    // engine uses (sha1(version + ':' + body)). The engine asks for these with a
+    // plain GET first so a CDN can cache them for every visitor.
+    this.batchcDir = path.join(this.cacheDir, 'batchc');
 
     fs.mkdirSync(this.cacheDir, { recursive: true });
+    fs.mkdirSync(this.batchcDir, { recursive: true });
   }
 
   get mode() {
@@ -153,6 +180,20 @@ class GameServer {
       }
     }
     throw lastErr;
+  }
+
+  /**
+   * Fetch bytes [start, end] of the remote zip as several parallel range
+   * requests. archive.org serves one connection at ~0.1 MB/s but ~8 at
+   * ~0.8 MB/s, so splitting a large read is a large speed-up.
+   */
+  async httpRangeParallel(start, end, chunk = 4 * 1024 * 1024, concurrency = 8) {
+    const total = end - start + 1;
+    if (total <= chunk) return this.httpRange(start, end);
+    const parts = [];
+    for (let s = start; s <= end; s += chunk) parts.push([s, Math.min(end, s + chunk - 1)]);
+    const bufs = await mapLimit(parts, concurrency, ([s, e]) => this.httpRange(s, e));
+    return Buffer.concat(bufs);
   }
 
   /** A Readable of bytes [start, end] of the remote zip (for direct proxying). */
@@ -261,7 +302,7 @@ class GameServer {
     const { data: dataPath, meta: metaPath } = this._cachePaths(name);
     const tmp = dataPath + '.tmp';
     const off = await this.dataOffset(name);
-    const raw = await this.httpRange(off, off + e.csize - 1);
+    const raw = await this.httpRangeParallel(off, off + e.csize - 1);
     this.stats.archive_bytes += raw.length;
     const data = e.method === 0 ? raw : zlib.inflateRawSync(raw);
     await fsp.writeFile(tmp, data);
@@ -519,6 +560,17 @@ class GameServer {
     }
     end = Math.min(end, size - 1);
     const length = end - start + 1;
+
+    // Weak validator so a repeat visit revalidates to a bodyless 304 instead of
+    // re-downloading every asset (the old code always sent the full body).
+    const ext = path.extname(file).toLowerCase();
+    const isHtml = ext === '.html' || ext === '.htm';
+    const etag = 'W/"' + size.toString(16) + '-' + Math.floor(st.mtimeMs).toString(16) + '"';
+    if (!partial && req.headers['if-none-match'] === etag) {
+      res.writeHead(304, { ETag: etag, 'Cache-Control': isHtml ? 'no-cache' : 'public, max-age=86400' });
+      return true;
+    }
+
     const headers = {
       'Content-Type': ctype(file),
       'Content-Length': String(length),
@@ -526,7 +578,9 @@ class GameServer {
       'Cross-Origin-Embedder-Policy': 'require-corp',
       'Cross-Origin-Resource-Policy': 'same-origin',
       'Accept-Ranges': 'bytes',
-      'Cache-Control': 'no-cache',
+      'ETag': etag,
+      // HTML always revalidates; images/fonts/CSS/JS may be reused for a day.
+      'Cache-Control': isHtml ? 'no-cache' : 'public, max-age=86400',
     };
     if (partial) headers['Content-Range'] = `bytes ${start}-${end}/${size}`;
     res.writeHead(partial ? 206 : 200, headers);
@@ -558,6 +612,10 @@ class GameServer {
 
     if (req.method === 'POST' && pathname === '/data/batch') {
       return this.handleBatch(req, res, u);
+    }
+
+    if ((req.method === 'GET' || req.method === 'HEAD') && pathname.startsWith('/data/batchc/')) {
+      return this.handleBatchCache(pathname, req, res);
     }
 
     if (pathname === '/download' || pathname === '/download/') {
@@ -659,21 +717,37 @@ class GameServer {
       return res.end('invalid batch');
     }
     try {
-      const parts = [];
-      const lengths = [];
-      for (const run of runs) {
+      // Read the runs with a little concurrency: each read is one (or a few)
+      // archive.org range request(s) and those are per-connection throttled, so
+      // a handful in flight turns a serial batch into a parallel one.
+      const readOne = async (run) => {
         const [ref, s, e] = run;
         const target = this.resolveData(ref);
         if (!target) throw new Error('missing ' + ref);
         const end = Math.min(e, target.size - 1);
         if (s < 0 || end < s) throw new Error('bad range');
-        const data = await this.readRange(target, s, end);
-        parts.push(data);
-        lengths.push(data.length);
-      }
+        return this.readRange(target, s, end);
+      };
+      const parts = await mapLimit(runs, 8, readOne);
+      const lengths = parts.map((p) => p.length);
       let out = Buffer.concat(parts);
       const gz = u.searchParams.get('gz') === '1';
-      if (gz) out = zlib.gzipSync(out, { level: 1 });
+      let gzBody = null;
+      if (gz) {
+        gzBody = zlib.gzipSync(out, { level: 1 });
+        out = gzBody;
+      }
+      // Keep this answer as a static, cacheable file: the engine asks for it
+      // with a plain GET first (see io_worker.js), so a CDN can serve it to
+      // every visitor without ever touching archive.org again.
+      const version = u.searchParams.get('v');
+      if (gz && u.searchParams.get('c') === '1' && version) {
+        const hash = crypto
+          .createHash('sha1')
+          .update(version + ':' + body.toString('utf8'))
+          .digest('hex');
+        fsp.writeFile(path.join(this.batchcDir, hash + '.bin'), gzBody).catch(() => {});
+      }
       const headers = {
         'Content-Type': 'application/octet-stream',
         'Content-Length': String(out.length),
@@ -689,6 +763,38 @@ class GameServer {
       res.writeHead(400, { 'Content-Type': 'text/plain' });
       res.end(String((e && e.message) || e));
     }
+  }
+
+  /**
+   * GET /data/batchc/<sha1>.bin — a pre-built POST /data/batch answer (gzipped).
+   * Served as raw gzip bytes (the engine wraps it in DecompressionStream itself),
+   * so no Content-Encoding here. Cached hard so a CDN keeps it at the edge.
+   */
+  async handleBatchCache(pathname, req, res) {
+    const m = /^\/data\/batchc\/([0-9a-f]{40})\.bin$/.exec(pathname);
+    if (!m) {
+      res.writeHead(404, { 'Content-Type': 'text/plain' });
+      return res.end('bad batch cache name');
+    }
+    const file = path.join(this.batchcDir, m[1] + '.bin');
+    let st;
+    try {
+      st = fs.statSync(file);
+    } catch {
+      res.writeHead(404, { 'Content-Type': 'text/plain' });
+      return res.end('batch not built yet');
+    }
+    const headers = {
+      'Content-Type': 'application/octet-stream',
+      'Content-Length': String(st.size),
+      'Cache-Control': 'public, max-age=31536000, immutable',
+      'Cross-Origin-Opener-Policy': 'same-origin',
+      'Cross-Origin-Embedder-Policy': 'require-corp',
+      'Cross-Origin-Resource-Policy': 'same-origin',
+    };
+    res.writeHead(200, headers);
+    if (req.method === 'HEAD') return res.end();
+    await pipeline(fs.createReadStream(file), res);
   }
 
   /** Warm the cache with the engine, shaders, title art and boot manifests. */

@@ -1,4 +1,4 @@
-!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -7,14 +7,13 @@
 <meta name="description" content="Play Grand Theft Auto V in your browser, or download the desktop app for Windows. Powered by WebAssembly and WebGPU.">
 <link rel="icon" href="/assets/logo.png">
 <link rel="preload" as="font" type="font/woff" href="/assets/chalet.woff" crossorigin>
+<link rel="preload" as="image" href="/assets/hero-city.jpg" as="image">
 <link rel="stylesheet" href="/styles.css">
-<script src="https://sites.super.myninja.ai/_assets/ninja-daytona-script.js"></script>
 </head>
 <body>
 
   <!-- backdrop layers -->
-  <div class="bg-scene" aria-hidden="true"></div>
-  <div class="bg-gif" aria-hidden="true"></div>
+  <div class="bg-photo" aria-hidden="true"></div>
   <div class="bg-overlay" aria-hidden="true"></div>
   <div class="grain" aria-hidden="true"></div>
 
@@ -73,5 +72,24 @@
     </p>
   </footer>
 
+  <script>
+    // Housekeeping so a returning visitor can never be served a stale, blank page:
+    // earlier builds registered a service worker and Cache API entries; this build
+    // registers none, so remove anything left behind. Runs after paint, non-blocking.
+    (function () {
+      try {
+        if ('serviceWorker' in navigator) {
+          navigator.serviceWorker.getRegistrations().then(function (rs) {
+            rs.forEach(function (r) { r.unregister(); });
+          }).catch(function () {});
+        }
+        if (window.caches && caches.keys) {
+          caches.keys().then(function (ks) {
+            ks.forEach(function (k) { if (k.indexOf('gamedata') === 0) caches.delete(k); });
+          }).catch(function () {});
+        }
+      } catch (e) { /* nothing to clean up */ }
+    })();
+  </script>
 </body>
 </html>

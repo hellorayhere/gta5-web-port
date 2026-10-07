@@ -44,7 +44,8 @@ WebAssembly **memory64**, which needs a recent Chromium).
 ### Option A — Blueprint (recommended)
 1. Push this folder to a GitHub repo.
 2. Render Dashboard → **New** → **Blueprint** → pick the repo.
-3. Render reads `render.yaml` and creates the `gta5-web-port` web service.
+3. Render reads `render.yaml` and creates the `gta5free` web service
+   (served at <https://gta5free.onrender.com>).
 
 ### Option B — Manual web service
 - **Environment:** Node
@@ -65,7 +66,13 @@ WebAssembly **memory64**, which needs a recent Chromium).
 - **Bandwidth:** each full game load streams a large amount of data from
   archive.org. Render's free plan has a monthly bandwidth cap — fine for personal
   use / a few players, not for public scale.
-- **Cold starts:** Render free web services sleep after inactivity; the first
-  request after sleeping takes a few seconds to wake.
+- **Cold starts:** Render free web services sleep after ~15 minutes of
+  inactivity, and the first request after sleeping is what makes the site look
+  blank/stuck for a while. The `.github/workflows/keepalive.yml` workflow pings
+  `/__status` every 10 minutes to keep the service warm.
+- **Batch cache:** the engine asks for its compressed boot batches with a plain
+  `GET /data/batchc/<sha1>.bin` first; the server now builds and stores those
+  when it answers the matching `POST /data/batch`, and serves them with a
+  one-year cache header so a CDN can hand them to every later visitor.
 - **GPU:** the *client* needs a browser with WebGPU. The server just streams bytes.
 - The game bundle is an unofficial community port; this service only relays it.

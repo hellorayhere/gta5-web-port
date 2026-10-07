@@ -2,7 +2,7 @@
 # Deploy with: Render Dashboard -> New -> Blueprint -> point at this repo.
 services:
   - type: web
-    name: gta5-web-port
+    name: gta5free
     runtime: node
     plan: free
     buildCommand: npm install
