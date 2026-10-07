@@ -1,0 +1,77 @@
+!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Grand Theft Auto V — Web Port</title>
+<meta name="description" content="Play Grand Theft Auto V in your browser, or download the desktop app for Windows. Powered by WebAssembly and WebGPU.">
+<link rel="icon" href="/assets/logo.png">
+<link rel="preload" as="font" type="font/woff" href="/assets/chalet.woff" crossorigin>
+<link rel="stylesheet" href="/styles.css">
+<script src="https://sites.super.myninja.ai/_assets/ninja-daytona-script.js"></script>
+</head>
+<body>
+
+  <!-- backdrop layers -->
+  <div class="bg-scene" aria-hidden="true"></div>
+  <div class="bg-gif" aria-hidden="true"></div>
+  <div class="bg-overlay" aria-hidden="true"></div>
+  <div class="grain" aria-hidden="true"></div>
+
+  <header class="topbar">
+    <div class="brand"><span class="mark"></span> Web Port</div>
+    <div class="tag">Unofficial · Fan Project</div>
+  </header>
+
+  <main class="hero">
+    <img class="logo" src="/assets/logo.png" alt="Grand Theft Auto V">
+    <p class="tagline">
+      The full RAGE engine, compiled to WebAssembly and running on WebGPU.
+      Play it right here in your browser — or take it with you.
+    </p>
+
+    <div class="actions">
+      <a class="btn btn-play" href="/play">
+        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>
+        Play in Browser
+      </a>
+      <a class="btn btn-download" href="/download" rel="noopener">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="M7 11l5 5 5-5"/><path d="M5 21h14"/></svg>
+        Download for Windows
+      </a>
+    </div>
+
+    <p class="meta">
+      Windows 10 / 11<span class="dot">•</span>64-bit<span class="dot">•</span>~100 MB<span class="dot">•</span>No install
+    </p>
+  </main>
+
+  <section class="info">
+    <div class="card">
+      <h3>Play Instantly</h3>
+      <p>No download, no install. Hit <strong>Play in Browser</strong> and the engine streams its assets on demand — a modern Chromium browser (Chrome or Edge 133+) with WebGPU is all you need.</p>
+    </div>
+    <div class="card">
+      <h3>Desktop App</h3>
+      <p>The Windows build bundles its own Chromium with WebGPU and multi-threaded WebAssembly support, so it runs even where the browser build struggles. Single portable file — just double-click.</p>
+    </div>
+    <div class="card">
+      <h3>Requirements</h3>
+      <ul>
+        <li><span>OS</span><span>Windows 10 / 11 (64-bit)</span></li>
+        <li><span>GPU</span><span>WebGPU-capable</span></li>
+        <li><span>Browser</span><span>Chrome / Edge 133+</span></li>
+        <li><span>Network</span><span>Broadband (first run)</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <p>
+      Fan-made WebAssembly port. Not affiliated with or endorsed by Rockstar Games or Take-Two Interactive.<br>
+      “Grand Theft Auto” and all related marks are trademarks of their respective owners. Assets are streamed from the public archive.
+    </p>
+  </footer>
+
+</body>
+</html>

@@ -1,0 +1,14 @@
+{
+  "name": "gta5-web-port-host",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Hosted streaming server for the GTA V WebAssembly/WebGPU web port (streams the 20 GB bundle from archive.org on demand).",
+  "main": "app.js",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "node app.js"
+  },
+  "license": "MIT"
+}
