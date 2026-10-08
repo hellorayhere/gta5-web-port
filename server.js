@@ -132,7 +132,7 @@ class GameServer {
     this.downloadUrl =
       opts.downloadUrl ||
       process.env.GTA5_DOWNLOAD_URL ||
-      'https://github.com/kv8t/gta5-web-port/releases/download/desktop-v1/GTA5-Web-Port-Windows.zip';
+      'https://github.com/hellorayhere/gta5-web-port/releases/download/desktop-v1/GTA5-Web-Port-Windows.zip';
     this.stats = { requests: 0, archive_bytes: 0, cache_hits: 0, cache_misses: 0 };
 
     this._resolvedUrl = null;
