@@ -14,4 +14,4 @@ services:
       - key: NODE_VERSION
         value: "20"
       - key: GTA5_DOWNLOAD_URL
-        value: "https://github.com/tiahhwashere/gta5-web-port/releases/download/desktop-v1/GTA5-Web-Port-Windows.zip"
+        value: "https://github.com/kv8t/gta5-web-port/releases/download/desktop-v1/GTA5-Web-Port-Windows.zip"
