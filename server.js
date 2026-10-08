@@ -132,7 +132,7 @@ class GameServer {
     this.downloadUrl =
       opts.downloadUrl ||
       process.env.GTA5_DOWNLOAD_URL ||
-      'https://archive.org/download/playgta5-offline/playgta5-offline.zip';
+      'https://github.com/hellorayhere/gta5-web-port/releases/download/electron-v1/Grand-Theft-Auto-Windows-x64.zip';
     this.stats = { requests: 0, archive_bytes: 0, cache_hits: 0, cache_misses: 0 };
 
     this._resolvedUrl = null;
@@ -416,6 +416,18 @@ class GameServer {
         return { file, size: st.size };
       } catch {
         return null;
+      }
+    }
+    if (this.bundleDir) {
+      const rel = pathname === '/' ? 'index.html' : pathname.replace(/^\/+/, '');
+      const file = path.normalize(path.join(this.bundleDir, rel));
+      if (file.startsWith(this.bundleDir)) {
+        try {
+          const st = fs.statSync(file);
+          if (st.isFile()) return { file, size: st.size };
+        } catch {
+          /* not in the local bundle; fall through to the remote archive */
+        }
       }
     }
     const name = pathname === '/' ? PREFIX + 'index.html' : PREFIX + pathname.replace(/^\/+/, '');
