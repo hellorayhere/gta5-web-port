@@ -129,7 +129,10 @@ class GameServer {
     this.cacheDir = opts.cacheDir || path.join(__dirname, '.cache');
     this.cacheLimit = opts.cacheLimit || 2_000_000_000;
     this.publicDir = opts.publicDir ? path.resolve(opts.publicDir) : null;
-    this.downloadUrl = opts.downloadUrl || process.env.GTA5_DOWNLOAD_URL || null;
+    this.downloadUrl =
+      opts.downloadUrl ||
+      process.env.GTA5_DOWNLOAD_URL ||
+      'https://github.com/tiahhwashere/gta5-web-port/releases/download/desktop-v1/GTA5-Web-Port-Windows.zip';
     this.stats = { requests: 0, archive_bytes: 0, cache_hits: 0, cache_misses: 0 };
 
     this._resolvedUrl = null;

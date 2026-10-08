@@ -65,8 +65,8 @@ body {
   inset: 0;
   z-index: -2;
   background:
-    radial-gradient(120% 95% at 50% 38%, rgba(0,0,0,0.04) 0%, rgba(0,0,0,0.46) 62%, rgba(0,0,0,0.90) 100%),
-    linear-gradient(180deg, rgba(0,0,0,0.80) 0%, rgba(0,0,0,0.10) 26%, rgba(0,0,0,0.30) 60%, rgba(0,0,0,0.95) 100%);
+    radial-gradient(120% 95% at 50% 38%, rgba(0,0,0,0.32) 0%, rgba(0,0,0,0.54) 62%, rgba(0,0,0,0.92) 100%),
+    linear-gradient(180deg, rgba(0,0,0,0.86) 0%, rgba(0,0,0,0.48) 26%, rgba(0,0,0,0.56) 60%, rgba(0,0,0,0.96) 100%);
 }
 
 /* The old .grain layer used mix-blend-mode: overlay on a fixed, full-viewport
@@ -126,8 +126,9 @@ body {
   margin: 26px auto 0;
   font-size: clamp(14px, 1.7vw, 17px);
   line-height: 1.65;
-  color: #cfcfca;
+  color: #dcdcd7;
   letter-spacing: 0.4px;
+  text-shadow: 0 2px 16px rgba(0,0,0,0.9), 0 1px 3px rgba(0,0,0,0.95);
 }
 
 /* ------------------------------------------------------------------ actions */
@@ -189,7 +190,8 @@ body {
   font-size: 12px;
   letter-spacing: 1.6px;
   text-transform: uppercase;
-  color: var(--muted-dim);
+  color: #b7b7b2;
+  text-shadow: 0 1px 10px rgba(0,0,0,0.95), 0 1px 2px rgba(0,0,0,0.95);
 }
 .meta .dot { color: var(--green); margin: 0 8px; }
 
@@ -338,8 +340,11 @@ body {
 .credits {
   position: relative;
   max-width: 1080px;
-  margin: 0 auto;
-  padding: 50px clamp(18px, 5vw, 40px) 40px;
+  margin: 50px auto 40px;
+  padding: 30px clamp(20px, 3vw, 34px) 34px;
+  background: rgba(12, 12, 12, 0.92);
+  border: 1px solid var(--line-soft);
+  border-radius: 5px;
 }
 .credits p {
   margin: 0 0 14px;
@@ -365,6 +370,7 @@ body {
   letter-spacing: 1.2px;
   color: var(--muted-dim);
   line-height: 1.9;
+  text-shadow: 0 1px 8px rgba(0,0,0,0.9);
 }
 .footer a { color: var(--muted); text-decoration: none; border-bottom: 1px solid var(--line); }
 .footer a:hover { color: var(--green); border-color: var(--green); }
