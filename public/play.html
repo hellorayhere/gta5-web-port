@@ -2,7 +2,11 @@
 <html>
 <head>
 <meta charset="utf-8">
-<title>game</title>
+<link rel="icon" type="image/png" href="/assets/logo.png">
+<link rel="apple-touch-icon" href="/assets/logo.png">
+<link rel="manifest" href="/manifest.webmanifest">
+<meta name="theme-color" content="#8dc63f">
+<title>Grand Theft Auto</title>
 <style>
 	html, body { margin: 0; height: 100%; background: #000; color: #ccc; font: 12px monospace; overflow: hidden; }
 	#canvas { display: block; position: absolute; left: 0; top: 0; width: 100vw; height: 100vh; background: #000; }
@@ -47,10 +51,6 @@
 <div id="loading"><div id="ls-stage"><div id="ls-screens"></div><img id="ls-logo" src="/b/8b0b5899ed/title/logo.png" alt=""><div id="ls-bars"><div id="modes" class="ls-bar"><button data-act="back"></button><button data-act="map5"></button><button data-act="map6"></button><button data-act="sandbox"></button><button data-act="story"></button></div><div class="ls-bar"><span id="label">Starting...</span><span id="pct">0%</span><i class="ls-spin"></i></div></div></div><div id="ls-log"><div id="data"></div><div id="console"></div></div><div id="bar"><div id="fill"></div></div></div>
 <div id="fps"></div>
 <script>
-// Runs before the engine module: remove any service worker / old cache left by
-// earlier builds (so a stale cache cannot blank the page), and ask the browser to
-// keep this origin's storage so savegames survive a reload. Also make sure a
-// startup failure shows a message instead of a blank screen.
 (function () {
 	try {
 		if ('serviceWorker' in navigator) navigator.serviceWorker.getRegistrations().then(function (rs) { rs.forEach(function (r) { r.unregister(); }); }).catch(function () {});
@@ -63,6 +63,12 @@
 	};
 	window.addEventListener('error', function (e) { if (document.getElementById('loading')) fail(e.message || 'script error'); });
 	window.addEventListener('unhandledrejection', function (e) { if (document.getElementById('loading')) fail((e.reason && e.reason.message) || 'promise rejection'); });
+})();
+
+(function () {
+	function ping() { try { fetch('/__status', { cache: 'no-store' }).catch(function () {}); } catch (e) {} }
+	ping();
+	setInterval(ping, 4 * 60 * 1000);
 })();
 </script>
 <script type="module">
@@ -363,7 +369,6 @@ if (remoteLog) {
 }
 // Release the io worker's exclusive storage handles as soon as this page goes away (a quick reload would otherwise find them locked and run without the store).
 addEventListener('pagehide', () => { try { new BroadcastChannel('game-io').postMessage('close'); } catch (e) {} });
-// Earlier versions cached the game data with a service worker (sw.js) and the Cache API: remove both, the io worker keeps its own store (io_worker.js).
 async function dropOldCache() {
 	try {
 		if ('serviceWorker' in navigator) for (const r of await navigator.serviceWorker.getRegistrations()) await r.unregister();

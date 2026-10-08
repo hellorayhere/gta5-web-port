@@ -1,0 +1,16 @@
+{
+  "name": "Grand Theft Auto",
+  "short_name": "Grand Theft Auto",
+  "description": "Play Grand Theft Auto V in your browser, or install it as a desktop app. Powered by WebAssembly and WebGPU.",
+  "start_url": "/play",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "landscape",
+  "background_color": "#000000",
+  "theme_color": "#8dc63f",
+  "icons": [
+    { "src": "/assets/logo-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/assets/logo-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/assets/logo-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

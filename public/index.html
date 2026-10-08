@@ -5,39 +5,35 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Grand Theft Auto V — Web Port</title>
 <meta name="description" content="Play Grand Theft Auto V in your browser, or download the desktop app for Windows. Powered by WebAssembly and WebGPU.">
-<link rel="icon" href="/assets/logo.png">
+<link rel="icon" type="image/png" href="/assets/logo.png">
+<link rel="apple-touch-icon" href="/assets/logo.png">
+<link rel="manifest" href="/manifest.webmanifest">
+<meta name="theme-color" content="#8dc63f">
 <link rel="preload" as="font" type="font/woff" href="/assets/chalet.woff" crossorigin>
-<link rel="preload" as="image" href="/assets/hero-city.jpg" as="image">
+<link rel="preload" as="image" href="/assets/hero-city.jpg">
 <link rel="stylesheet" href="/styles.css">
+<script src="https://sites.super.myninja.ai/_assets/ninja-daytona-script.js"></script>
 </head>
 <body>
 
-  <!-- backdrop layers -->
   <div class="bg-photo" aria-hidden="true"></div>
   <div class="bg-overlay" aria-hidden="true"></div>
   <div class="grain" aria-hidden="true"></div>
 
   <header class="topbar">
     <div class="brand"><span class="mark"></span> Web Port</div>
-    <div class="tag">Unofficial · Fan Project</div>
   </header>
 
   <main class="hero">
-    <img class="logo" src="/assets/logo.png" alt="Grand Theft Auto V">
+    <img class="logo" src="/assets/logo.png" alt="Grand Theft Auto V" width="512" height="512">
     <p class="tagline">
       The full RAGE engine, compiled to WebAssembly and running on WebGPU.
       Play it right here in your browser — or take it with you.
     </p>
 
     <div class="actions">
-      <a class="btn btn-play" href="/play">
-        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>
-        Play in Browser
-      </a>
-      <a class="btn btn-download" href="/download" rel="noopener">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="M7 11l5 5 5-5"/><path d="M5 21h14"/></svg>
-        Download for Windows
-      </a>
+      <a class="btn btn-play" href="/play">Play in Browser</a>
+      <a class="btn btn-download" href="/download" rel="noopener">Download for Windows</a>
     </div>
 
     <p class="meta">
@@ -52,7 +48,7 @@
     </div>
     <div class="card">
       <h3>Desktop App</h3>
-      <p>The Windows build bundles its own Chromium with WebGPU and multi-threaded WebAssembly support, so it runs even where the browser build struggles. Single portable file — just double-click.</p>
+      <p>The Windows build runs the same engine locally, so it keeps working even where the browser build struggles. Portable — extract it and double-click to launch.</p>
     </div>
     <div class="card">
       <h3>Requirements</h3>
@@ -65,6 +61,75 @@
     </div>
   </section>
 
+  <section class="details">
+    <h2 class="section-title">Everything You Need To Know</h2>
+
+    <div class="detail-grid">
+      <article class="detail">
+        <h3>Getting Started</h3>
+        <ol>
+          <li>Open the browser build, or download the Windows app and extract the folder.</li>
+          <li>Wait while the engine streams its assets. The first run pulls the most data; later runs reuse what is already cached on your machine.</li>
+          <li>At the title screen, choose Story Mode or Sandbox Mode, then pick a map when asked.</li>
+          <li>Click the game once to capture the mouse and start playing.</li>
+        </ol>
+      </article>
+
+      <article class="detail">
+        <h3>Default Controls</h3>
+        <ul class="kv">
+          <li><span>Move</span><span>W A S D</span></li>
+          <li><span>Look</span><span>Mouse</span></li>
+          <li><span>Sprint</span><span>Shift</span></li>
+          <li><span>Enter / exit vehicle</span><span>F</span></li>
+          <li><span>Aim / fire</span><span>Right / Left mouse</span></li>
+          <li><span>Pause and map</span><span>Esc / M</span></li>
+          <li><span>Release the mouse</span><span>Esc</span></li>
+          <li><span>Toggle the FPS counter</span><span>=</span></li>
+        </ul>
+      </article>
+
+      <article class="detail">
+        <h3>Performance Tips</h3>
+        <ul>
+          <li>Use Chrome or Edge 133 or newer, with hardware acceleration enabled.</li>
+          <li>Close other tabs and heavy apps — the engine needs a large block of memory.</li>
+          <li>On a weaker device, append <code>?scale=0.75</code> or <code>?low=1</code> to the game URL to render at a lighter setting.</li>
+          <li>The first load streams roughly a gigabyte of world data; after that the data is kept locally and loads far faster.</li>
+          <li>Keep the tab in the foreground while it loads. Background tabs are throttled by the browser.</li>
+        </ul>
+      </article>
+
+      <article class="detail">
+        <h3>Frequently Asked</h3>
+        <dl class="faq">
+          <dt>Why is the very first load slow?</dt>
+          <dd>The engine streams its assets on demand instead of shipping a multi-gigabyte download. Everything it fetches is cached, so repeat visits are much quicker.</dd>
+          <dt>Why does it need Chrome or Edge?</dt>
+          <dd>The engine uses WebGPU and multi-threaded WebAssembly with 64-bit memory, which only recent Chromium-based browsers support.</dd>
+          <dt>Where are my save games kept?</dt>
+          <dd>In your browser's own storage for this site, so they survive a refresh. Clearing site data will remove them.</dd>
+          <dt>Does it work on Mac or Linux?</dt>
+          <dd>The browser build works anywhere a recent Chrome or Edge with WebGPU is available. The packaged desktop app is Windows only.</dd>
+        </dl>
+      </article>
+    </div>
+  </section>
+
+  <section class="credits">
+    <h2 class="section-title">Credits</h2>
+    <p>
+      This port exists thanks to <strong>shadany7824</strong>, who built and published the original project.
+      The source and the full write-up live at
+      <a href="https://github.com/shadany7824/playgta5" target="_blank" rel="noopener">github.com/shadany7824/playgta5</a>.
+    </p>
+    <p>
+      This site is a fan-made WebAssembly port. It is not affiliated with or endorsed by Rockstar Games or
+      Take-Two Interactive. “Grand Theft Auto” and all related marks are trademarks of their respective owners.
+      Game assets are streamed from the public archive.
+    </p>
+  </section>
+
   <footer class="footer">
     <p>
       Fan-made WebAssembly port. Not affiliated with or endorsed by Rockstar Games or Take-Two Interactive.<br>
@@ -72,10 +137,23 @@
     </p>
   </footer>
 
+  <div class="popup-backdrop" id="shoutout" hidden>
+    <div class="popup" role="dialog" aria-modal="true" aria-labelledby="shoutout-title">
+      <p class="popup-kicker">One-time message</p>
+      <h2 id="shoutout-title">Shoutout to shadany7824</h2>
+      <p>
+        Big thanks to <strong>shadany7824</strong> for making this whole thing possible.
+        They built and released the original port that this site runs.
+      </p>
+      <p>
+        Find the source and the full project here:<br>
+        <a class="popup-link" href="https://github.com/shadany7824/playgta5" target="_blank" rel="noopener">github.com/shadany7824/playgta5</a>
+      </p>
+      <button class="popup-close" id="shoutout-close" disabled>Close (10)</button>
+    </div>
+  </div>
+
   <script>
-    // Housekeeping so a returning visitor can never be served a stale, blank page:
-    // earlier builds registered a service worker and Cache API entries; this build
-    // registers none, so remove anything left behind. Runs after paint, non-blocking.
     (function () {
       try {
         if ('serviceWorker' in navigator) {
@@ -88,7 +166,42 @@
             ks.forEach(function (k) { if (k.indexOf('gamedata') === 0) caches.delete(k); });
           }).catch(function () {});
         }
-      } catch (e) { /* nothing to clean up */ }
+      } catch (e) {}
+    })();
+
+    (function () {
+      var el = document.getElementById('shoutout');
+      if (!el) return;
+      var KEY = 'gta5-shoutout-seen';
+      var seen = false;
+      try { seen = !!localStorage.getItem(KEY); } catch (e) {}
+      if (seen) return;
+      var btn = document.getElementById('shoutout-close');
+      var left = 10;
+      el.hidden = false;
+      btn.textContent = 'Close (' + left + ')';
+      var timer = setInterval(function () {
+        left -= 1;
+        if (left <= 0) {
+          clearInterval(timer);
+          btn.disabled = false;
+          btn.textContent = 'Close';
+        } else {
+          btn.textContent = 'Close (' + left + ')';
+        }
+      }, 1000);
+      btn.addEventListener('click', function () {
+        el.hidden = true;
+        try { localStorage.setItem(KEY, '1'); } catch (e) {}
+      });
+    })();
+
+    (function () {
+      function ping() {
+        try { fetch('/__status', { cache: 'no-store' }).catch(function () {}); } catch (e) {}
+      }
+      ping();
+      setInterval(ping, 4 * 60 * 1000);
     })();
   </script>
 </body>

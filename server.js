@@ -58,6 +58,7 @@ const MIME = {
   '.ogg': 'audio/ogg',
   '.woff': 'font/woff',
   '.woff2': 'font/woff2',
+  '.webmanifest': 'application/manifest+json',
 };
 
 function ctype(name) {
@@ -524,6 +525,7 @@ class GameServer {
     let rel;
     if (pathname === '/' || pathname === '') rel = 'index.html';
     else if (pathname === '/play' || pathname === '/play/') rel = 'play.html';
+    else if (pathname === '/favicon.ico') rel = 'assets/logo.png';
     else rel = pathname.replace(/^\/+/, '');
     const file = path.normalize(path.join(this.publicDir, rel));
     if (file !== this.publicDir && !file.startsWith(this.publicDir + path.sep)) return false;
@@ -562,12 +564,21 @@ class GameServer {
     const length = end - start + 1;
 
     // Weak validator so a repeat visit revalidates to a bodyless 304 instead of
-    // re-downloading every asset (the old code always sent the full body).
+    // re-downloading every asset.
     const ext = path.extname(file).toLowerCase();
     const isHtml = ext === '.html' || ext === '.htm';
+    const isCode = ext === '.css' || ext === '.js' || ext === '.mjs' || ext === '.webmanifest';
     const etag = 'W/"' + size.toString(16) + '-' + Math.floor(st.mtimeMs).toString(16) + '"';
+    // stale-while-revalidate: a repeat navigation paints from cache instantly and
+    // the browser refreshes the copy in the background, so entering, leaving and
+    // refreshing the site never waits on the network.
+    const cacheControl = isHtml
+      ? 'public, max-age=0, stale-while-revalidate=604800'
+      : isCode
+        ? 'public, max-age=300, stale-while-revalidate=604800'
+        : 'public, max-age=86400, stale-while-revalidate=604800';
     if (!partial && req.headers['if-none-match'] === etag) {
-      res.writeHead(304, { ETag: etag, 'Cache-Control': isHtml ? 'no-cache' : 'public, max-age=86400' });
+      res.writeHead(304, { ETag: etag, 'Cache-Control': cacheControl });
       return true;
     }
 
@@ -579,8 +590,7 @@ class GameServer {
       'Cross-Origin-Resource-Policy': 'same-origin',
       'Accept-Ranges': 'bytes',
       'ETag': etag,
-      // HTML always revalidates; images/fonts/CSS/JS may be reused for a day.
-      'Cache-Control': isHtml ? 'no-cache' : 'public, max-age=86400',
+      'Cache-Control': cacheControl,
     };
     if (partial) headers['Content-Range'] = `bytes ${start}-${end}/${size}`;
     res.writeHead(partial ? 206 : 200, headers);
