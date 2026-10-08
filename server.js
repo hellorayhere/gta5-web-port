@@ -132,7 +132,7 @@ class GameServer {
     this.downloadUrl =
       opts.downloadUrl ||
       process.env.GTA5_DOWNLOAD_URL ||
-      'https://github.com/hellorayhere/gta5-web-port/releases/download/electron-v1/Grand-Theft-Auto-Windows-x64.zip';
+      'https://github.com/hellorayhere/gta5-web-port/releases/download/electron-v1/Grand-Theft-Auto-Setup.exe';
     this.stats = { requests: 0, archive_bytes: 0, cache_hits: 0, cache_misses: 0 };
 
     this._resolvedUrl = null;
