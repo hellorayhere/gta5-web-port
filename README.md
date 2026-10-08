@@ -44,8 +44,8 @@ WebAssembly **memory64**, which needs a recent Chromium).
 ### Option A — Blueprint (recommended)
 1. Push this folder to a GitHub repo.
 2. Render Dashboard → **New** → **Blueprint** → pick the repo.
-3. Render reads `render.yaml` and creates the `gta5free` web service
-   (served at <https://gta5free.onrender.com>).
+3. Render reads `render.yaml` and creates the `freeplay` web service
+   (served at <https://freeplay.onrender.com>).
 
 ### Option B — Manual web service
 - **Environment:** Node

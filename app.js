@@ -44,7 +44,7 @@ const CACHE_DIR = process.env.GTA5_CACHE_DIR || path.join(os.tmpdir(), 'gta5-cac
   // 4 minutes stays well inside that idle window, so once the service is up it
   // stays up and never expires from inactivity. RENDER_EXTERNAL_URL is injected
   // by Render; GTA5_SELF_URL overrides it.
-  const SELF_URL = (process.env.GTA5_SELF_URL || process.env.RENDER_EXTERNAL_URL || 'https://gta5free.onrender.com').replace(/\/+$/, '');
+  const SELF_URL = (process.env.GTA5_SELF_URL || process.env.RENDER_EXTERNAL_URL || 'https://freeplay.onrender.com').replace(/\/+$/, '');
   const keepAlive = async () => {
     try {
       await fetch(SELF_URL + '/__status', { cache: 'no-store' });
