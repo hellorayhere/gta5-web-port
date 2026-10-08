@@ -14,15 +14,6 @@
 	@font-face { font-family: 'Chalet'; src: url('/b/8b0b5899ed/title/chalet.woff') format('woff'); }
 	#loading { position: fixed; inset: 0; background: #000; overflow: hidden; transition: opacity .8s; z-index: 5; }
 	#loading.done { opacity: 0; pointer-events: none; }
-        /* "Skip Loading": dismiss the loading screen early and play while the rest loads in the background. */
-        #skip { position: fixed; right: 16px; top: 14px; z-index: 7; padding: 7px 14px; border: 1px solid rgba(255, 255, 255, .4); border-radius: 3px; background: rgba(0, 0, 0, .55); color: #fff; font: 12px Chalet, sans-serif; letter-spacing: .4px; cursor: pointer; }
-        #skip:hover { background: rgba(0, 0, 0, .85); border-color: #fff; }
-        #skip.hidden { display: none; }
-        #loadpill { position: fixed; right: 16px; top: 14px; z-index: 7; padding: 6px 12px; border-radius: 3px; background: rgba(0, 0, 0, .55); color: #ccc; font: 12px Chalet, sans-serif; font-variant-numeric: tabular-nums; display: none; }
-        /* Skipped: reveal the canvas, but keep the mode bar so the Story/Sandbox choice is never lost. */
-        #loading.skipped { background: transparent; pointer-events: none; }
-        #loading.skipped #ls-screens, #loading.skipped #ls-logo, #loading.skipped #bar, #loading.skipped #ls-log { display: none; }
-        #loading.skipped #ls-bars { pointer-events: auto; }
 	#ls-stage { position: absolute; left: 0; top: 0; width: 1280px; height: 720px; transform-origin: 0 0; overflow: hidden; font: 12px Chalet, sans-serif; color: #fff; }
 	#ls-screens { position: absolute; inset: 0; }
 	.ls-screen { position: absolute; inset: 0; }
@@ -52,14 +43,17 @@
 	#fill { height: 100%; width: 0; background: #7cc576; }
 	#hud { position: fixed; left: 8px; bottom: 8px; max-width: 60vw; white-space: pre-wrap; opacity: .8; pointer-events: none; }
 	#fps { position: fixed; left: 8px; top: 6px; display: none; color: #0f0; font: bold 18px/1.2 Consolas, monospace; font-variant-numeric: tabular-nums; text-shadow: 1px 1px 2px #000, 0 0 3px #000; pointer-events: none; z-index: 10; }
+        /* Fullscreen: a small button top-right (F11 does the same); the label follows the state. */
+        #fs { position: fixed; right: 10px; top: 8px; z-index: 6; padding: 5px 11px; border: 1px solid rgba(255, 255, 255, .35); border-radius: 3px; background: rgba(0, 0, 0, .5); color: #fff; font: 12px Chalet, sans-serif; letter-spacing: .4px; cursor: pointer; }
+        #fs:hover { background: rgba(0, 0, 0, .85); border-color: #fff; }
 </style>
 </head>
 <body>
 <canvas id="canvas" width="800" height="600" tabindex="-1"></canvas>
 <div id="hud"></div>
-<div id="loading"><button id="skip" type="button">Skip Loading</button><div id="ls-stage"><div id="ls-screens"></div><img id="ls-logo" src="/b/8b0b5899ed/title/logo.png" alt=""><div id="ls-bars"><div id="modes" class="ls-bar"><button data-act="back"></button><button data-act="map5"></button><button data-act="map6"></button><button data-act="sandbox"></button><button data-act="story"></button></div><div class="ls-bar"><span id="label">Starting...</span><span id="pct">0%</span><i class="ls-spin"></i></div></div></div><div id="ls-log"><div id="data"></div><div id="console"></div></div><div id="bar"><div id="fill"></div></div></div>
+<div id="loading"><div id="ls-stage"><div id="ls-screens"></div><img id="ls-logo" src="/b/8b0b5899ed/title/logo.png" alt=""><div id="ls-bars"><div id="modes" class="ls-bar"><button data-act="back"></button><button data-act="map5"></button><button data-act="map6"></button><button data-act="sandbox"></button><button data-act="story"></button></div><div class="ls-bar"><span id="label">Starting...</span><span id="pct">0%</span><i class="ls-spin"></i></div></div></div><div id="ls-log"><div id="data"></div><div id="console"></div></div><div id="bar"><div id="fill"></div></div></div>
 <div id="fps"></div>
-<div id="loadpill"></div>
+	<button id="fs" type="button">Fullscreen</button>
 <script>
 (function () {
 	try {
@@ -281,26 +275,11 @@ showModes();
 {
 	const loading = document.getElementById('loading'), fill = document.getElementById('fill'), label = document.getElementById('label'), pct = document.getElementById('pct');
 	let target = 0, shown = 0, ready = false, dirty = false, loadingGone = false;
+	// Resume the bar where it left off: the desktop app keeps loading in the tray, and
+	// this also covers a full restart, so the progress bar never jumps back to 0.
+	let lastSaved = 0;
+	try { const saved = parseFloat(localStorage.getItem('gta-load-pct') || '0'); if (saved > 0 && saved < 100) { shown = target = saved; } } catch { /* ignore */ }
 	let dataBytes = 0, worldBase = -1;
-        // ---- "Skip Loading": let the player in early; the engine keeps streaming the game data, audio and GFX in the background. ----
-        const skipBtn = document.getElementById('skip'), loadpill = document.getElementById('loadpill');
-        let skipped = false, pillOn = false;
-        const showPill = () => { if (ready) return; pillOn = true; loadpill.style.display = 'block'; loadpill.textContent = 'Loading... ' + Math.round(shown) + '%'; };
-        function dismiss() {            // drop the overlay for good, the same way the natural finish does
-                if (loadingGone) return;
-                loadingGone = true;
-                loading.classList.add('done');
-                setTimeout(() => { loading.remove(); stopTitle(); }, 1000);
-                skipBtn.classList.add('hidden');
-                showPill();
-        }
-        skipBtn.addEventListener('click', () => {
-                if (startCommitted) { dismiss(); return; }              // the engine already took the choice: nothing left to pick, drop the overlay
-                skipped = true;         // keep the mode bar (the Story/Sandbox choice must not be lost) but reveal the game behind it
-                loading.classList.add('skipped');
-                skipBtn.classList.add('hidden');
-                showPill();
-        });
 	const samples = [];
 	let lastLine = '';
 	const consoleEl = document.getElementById('console');
@@ -324,7 +303,7 @@ showModes();
 		if (m.error) { label.textContent = m.error; label.style.color = '#e66'; return; }
 		if (m.pct > target) { target = m.pct; if (m.label) { lastLabel = m.label; if (!waitingChoice) label.textContent = m.label; } if (m.pct >= 72 && worldBase < 0) worldBase = dataBytes; }
 		if (m.choice && !startMode) { waitingChoice = true; modesEl.classList.add('ask'); showModes(); }		// the engine waits for the choice: showModes asks for it in the label
-		if (m.commit) { startCommitted = true; pickingMap = false; if (m.mode) startMode = m.mode; showModes(); if (skipped) dismiss(); }		// the engine took the choice
+		if (m.commit) { startCommitted = true; pickingMap = false; if (m.mode) startMode = m.mode; showModes(); }		// the engine took the choice
 		if (m.compiling !== undefined && !waitingChoice) { label.textContent = lastLabel = 'Preparing shaders'; target = Math.max(target, 99); }		// the world is up; the GPU worker holds it until its pipelines are compiled
 		if (m.world) { ready = true; hud.textContent = 'click the game to capture the mouse (Esc releases it, Shift+P switches keyboard mode, = shows FPS)'; setTimeout(() => { hud.textContent = ''; }, 15000); }
 	};
@@ -353,14 +332,14 @@ showModes();
 		const cap = ready ? 100 : Math.min(99, target + 6);
 		const goal = ready ? 100 : (shown < target ? target : cap);
 		shown += (goal - shown) * (goal === target || ready ? 0.12 : 0.004);
+		if (now - lastSaved > 1000) { lastSaved = now; try { localStorage.setItem('gta-load-pct', shown.toFixed(1)); } catch { /* ignore */ } }
 		if (dirty) {		// the newest line only
 			dirty = false;
 			consoleEl.textContent = lastLine;
 		}
-		if (!loadingGone) fill.style.width = shown.toFixed(1) + '%';
-		if (!loadingGone) pct.textContent = Math.round(shown) + '%';
-                if (pillOn) loadpill.textContent = ready ? 'Loading... 100%' : 'Loading... ' + Math.round(shown) + '%';
-		if (ready && shown > 99.5) { if (!loadingGone) { loading.classList.add('done'); setTimeout(() => { loading.remove(); stopTitle(); }, 1000); loadingGone = true; } if (pillOn) setTimeout(() => { loadpill.style.display = 'none'; }, 1200); clearInterval(progressTimer); }		// once: the page does no loading-screen work during play
+		fill.style.width = shown.toFixed(1) + '%';
+		pct.textContent = Math.round(shown) + '%';
+		if (ready && shown > 99.5) { loading.classList.add('done'); setTimeout(() => { loading.remove(); stopTitle(); }, 1000); loadingGone = true; clearInterval(progressTimer); try { localStorage.removeItem('gta-load-pct'); } catch { /* ignore */ } }		// once: the page does no loading-screen work during play
 	}, 50);
 }
 const hud = document.getElementById('hud');
@@ -651,6 +630,18 @@ function installInput(memory, block) {
 		const n = Math.trunc(wheelAccum);
 		if (n) { wheelAccum -= n; Atomics.add(w, DZ, n); }
 	}, { passive: false });
+}
+
+// ---- fullscreen: the button top-right (F11 does the same in the desktop app) --------------------
+{
+	const fs = document.getElementById('fs');
+	const sync = () => { fs.textContent = document.fullscreenElement ? 'Exit Fullscreen' : 'Fullscreen'; };
+	fs.addEventListener('click', () => {
+		if (document.fullscreenElement) document.exitFullscreen();
+		else document.documentElement.requestFullscreen().catch(() => {});
+	});
+	document.addEventListener('fullscreenchange', sync);
+	sync();
 }
 </script>
 </body>
