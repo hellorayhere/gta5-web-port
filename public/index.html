@@ -12,13 +12,11 @@
 <link rel="preload" as="font" type="font/woff" href="/assets/chalet.woff" crossorigin>
 <link rel="preload" as="image" href="/assets/hero-city.jpg">
 <link rel="stylesheet" href="/styles.css">
-<script src="https://sites.super.myninja.ai/_assets/ninja-daytona-script.js"></script>
 </head>
 <body>
 
   <div class="bg-photo" aria-hidden="true"></div>
   <div class="bg-overlay" aria-hidden="true"></div>
-  <div class="grain" aria-hidden="true"></div>
 
   <header class="topbar">
     <div class="brand"><span class="mark"></span> Web Port</div>
@@ -177,11 +175,14 @@
       try { seen = !!localStorage.getItem(KEY); } catch (e) {}
       if (seen) return;
       var btn = document.getElementById('shoutout-close');
-      var left = 10;
+      var wait = 10000;
+      var start = Date.now();
       el.hidden = false;
-      btn.textContent = 'Close (' + left + ')';
+      btn.textContent = 'Close (10)';
+      // Time-based, so the 10s wait stays correct even if the browser throttles
+      // timers while the tab is in the background.
       var timer = setInterval(function () {
-        left -= 1;
+        var left = Math.ceil((wait - (Date.now() - start)) / 1000);
         if (left <= 0) {
           clearInterval(timer);
           btn.disabled = false;
@@ -198,10 +199,18 @@
 
     (function () {
       function ping() {
+        if (document.visibilityState === 'hidden') return;
         try { fetch('/__status', { cache: 'no-store' }).catch(function () {}); } catch (e) {}
       }
       ping();
       setInterval(ping, 4 * 60 * 1000);
+      // Do no network work while the tab is hidden (that work used to pile up
+      // and stutter the page the moment the visitor came back), and refresh
+      // the keep-alive right away when the tab becomes visible again.
+      document.addEventListener('visibilitychange', function () {
+        if (document.visibilityState === 'visible') ping();
+      });
+      window.addEventListener('pageshow', function (e) { if (e.persisted) ping(); });
     })();
   </script>
 </body>

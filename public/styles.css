@@ -51,10 +51,13 @@ body {
   background-repeat: no-repeat;
   background-position: center;
   background-size: cover;
-  filter: saturate(1.06) contrast(1.03) brightness(0.94);
+  /* No CSS filter here: a full-viewport filter forces the compositor to
+     re-render the whole layer on every repaint (and again when the tab is
+     restored), which is what made refresh / tab-out / tab-back feel laggy.
+     The darkening is baked into the overlay below instead. */
   transform: translateZ(0);
   backface-visibility: hidden;
-  opacity: 0.92;
+  opacity: 0.94;
 }
 
 .bg-overlay {
@@ -66,17 +69,10 @@ body {
     linear-gradient(180deg, rgba(0,0,0,0.80) 0%, rgba(0,0,0,0.10) 26%, rgba(0,0,0,0.30) 60%, rgba(0,0,0,0.95) 100%);
 }
 
-.grain {
-  position: fixed;
-  inset: 0;
-  z-index: -1;
-  pointer-events: none;
-  opacity: 0.05;
-  background-image: repeating-linear-gradient(
-    0deg, rgba(255,255,255,0.9) 0px, rgba(255,255,255,0.9) 1px,
-    rgba(0,0,0,0) 1px, rgba(0,0,0,0) 3px);
-  mix-blend-mode: overlay;
-}
+/* The old .grain layer used mix-blend-mode: overlay on a fixed, full-viewport
+   element. A blend mode on a full-screen layer makes the browser re-composite
+   the entire page on every paint (and on every tab restore), so it was removed
+   for a smoother refresh / tab-out / tab-back. */
 
 /* ------------------------------------------------------------------ top bar */
 
@@ -210,12 +206,13 @@ body {
 }
 
 .card {
-  background: var(--panel);
+  /* Solid-ish panel instead of backdrop-filter: blur(). A backdrop blur makes
+     the browser re-blur everything behind the element on every repaint, which
+     is costly across many cards and shows up as stutter on tab restore. */
+  background: rgba(14, 14, 14, 0.88);
   border: 1px solid var(--line-soft);
   border-radius: 5px;
   padding: 26px 24px;
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
 }
 .card h3 {
   margin: 0 0 12px;
@@ -270,12 +267,10 @@ body {
 }
 
 .detail {
-  background: var(--panel);
+  background: rgba(14, 14, 14, 0.88);
   border: 1px solid var(--line-soft);
   border-radius: 5px;
   padding: 26px 24px;
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
 }
 .detail h3 {
   margin: 0 0 14px;
@@ -384,9 +379,7 @@ body {
   align-items: center;
   justify-content: center;
   padding: 20px;
-  background: rgba(0, 0, 0, 0.72);
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
+  background: rgba(0, 0, 0, 0.8);
 }
 .popup-backdrop[hidden] { display: none; }
 

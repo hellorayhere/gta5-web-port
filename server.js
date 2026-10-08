@@ -65,6 +65,12 @@ function ctype(name) {
   return MIME[path.extname(name).toLowerCase()] || 'application/octet-stream';
 }
 
+// Small text assets worth gzipping on the fly (kept in memory, keyed by mtime).
+const COMPRESSIBLE = new Set([
+  '.html', '.htm', '.css', '.js', '.mjs', '.webmanifest',
+  '.json', '.svg', '.txt', '.wgsl',
+]);
+
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 /** Resolve when a writable stream drains or closes (removes both listeners). */
@@ -520,6 +526,16 @@ class GameServer {
     }
   }
 
+  /** Gzip a small text file once and keep it in memory (invalidated by mtime). */
+  _gz(file, st) {
+    const cache = this._gzCache || (this._gzCache = new Map());
+    const hit = cache.get(file);
+    if (hit && hit.mtime === st.mtimeMs && hit.size === st.size) return hit.buf;
+    const buf = zlib.gzipSync(fs.readFileSync(file), { level: 6 });
+    cache.set(file, { mtime: st.mtimeMs, size: st.size, buf });
+    return buf;
+  }
+
   /** Serve a file from the public/ dir (landing page, play page, assets). */
   async _serveStatic(pathname, req, res) {
     let rel;
@@ -568,7 +584,6 @@ class GameServer {
     const ext = path.extname(file).toLowerCase();
     const isHtml = ext === '.html' || ext === '.htm';
     const isCode = ext === '.css' || ext === '.js' || ext === '.mjs' || ext === '.webmanifest';
-    const etag = 'W/"' + size.toString(16) + '-' + Math.floor(st.mtimeMs).toString(16) + '"';
     // stale-while-revalidate: a repeat navigation paints from cache instantly and
     // the browser refreshes the copy in the background, so entering, leaving and
     // refreshing the site never waits on the network.
@@ -577,14 +592,28 @@ class GameServer {
       : isCode
         ? 'public, max-age=300, stale-while-revalidate=604800'
         : 'public, max-age=86400, stale-while-revalidate=604800';
+
+    // gzip the small text assets (HTML/CSS/JS/manifest/SVG) so a refresh ships
+    // less over the wire and parses sooner. Whole-file, non-range requests only.
+    const acceptGzip = /\bgzip\b/.test(req.headers['accept-encoding'] || '');
+    const gzBody = (!partial && acceptGzip && COMPRESSIBLE.has(ext) && size <= 512 * 1024)
+      ? this._gz(file, st)
+      : null;
+
+    const etag = 'W/"' + size.toString(16) + '-' + Math.floor(st.mtimeMs).toString(16)
+      + (gzBody ? '-gz' : '') + '"';
     if (!partial && req.headers['if-none-match'] === etag) {
+      // End the response explicitly: a 304 has no body, and without res.end()
+      // the socket is left open, so the browser waits for a timeout before it
+      // falls back to its cached copy (this was the refresh lag).
       res.writeHead(304, { ETag: etag, 'Cache-Control': cacheControl });
+      res.end();
       return true;
     }
 
     const headers = {
       'Content-Type': ctype(file),
-      'Content-Length': String(length),
+      'Content-Length': String(gzBody ? gzBody.length : length),
       'Cross-Origin-Opener-Policy': 'same-origin',
       'Cross-Origin-Embedder-Policy': 'require-corp',
       'Cross-Origin-Resource-Policy': 'same-origin',
@@ -592,10 +621,18 @@ class GameServer {
       'ETag': etag,
       'Cache-Control': cacheControl,
     };
+    if (gzBody) {
+      headers['Content-Encoding'] = 'gzip';
+      headers['Vary'] = 'Accept-Encoding';
+    }
     if (partial) headers['Content-Range'] = `bytes ${start}-${end}/${size}`;
     res.writeHead(partial ? 206 : 200, headers);
     if (req.method === 'HEAD') {
       res.end();
+      return true;
+    }
+    if (gzBody) {
+      res.end(gzBody);
       return true;
     }
     await pipeline(fs.createReadStream(file, { start, end }), res);
